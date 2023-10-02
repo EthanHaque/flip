@@ -30,14 +30,14 @@ from glob import glob
 # Environment global variables
 # ==============================================================================
 # Number of output images when the data_generator.py is ejecuted
-N_SAMPLES = 10
+N_SAMPLES = 30
 
 # Data - path for background images
-BACKGROUNDS_PATTERN = "examples/data/backgrounds/*"
+BACKGROUNDS_PATTERN = r"\\wsl.localhost\Ubuntu\home\ethan\rustow\deskewing_datasets\images\texture_ninja\*"
 
 # Data - path for objects images
 # TODO: Create class selection
-OBJECTS_PATTERN = "examples/data/objects/**/*"
+OBJECTS_PATTERN = r"\\wsl.localhost\Ubuntu\home\ethan\rustow\deskewing_datasets\images\cudl_images\segmented_images\**\*"
 
 # current now date to create the result folder name for output images
 DATE = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -46,13 +46,13 @@ DATE = datetime.now().strftime("%Y%m%d_%H%M%S")
 OUT_DIR = "examples/result/{}".format(DATE)
 
 #Create classes array
-CLASSES_PATTERN ="examples/data/objects/**"
+CLASSES_PATTERN = r"\\wsl.localhost\Ubuntu\home\ethan\rustow\deskewing_datasets\images\doc_lay_net\*"
 
 # Object randomization
 # number of objects for full image
 # (1) = only one image -
 # (1,3) = random objects number
-N_OBJECTS = (1,4)
+N_OBJECTS = (1)
 
 
 # ==============================================================================
@@ -93,7 +93,7 @@ def setup_environment(objects_pattern, backgrounds_pattern, n_samples, classes):
         el = create_element(objects_paths, backgrounds_paths, classes_names)
         elements.append(el)
 
-    create_google_csv(elements)
+    # create_google_csv(elements)
 
 
 def create_element(objects_paths, backgrounds_paths, classes_names):
@@ -118,7 +118,7 @@ def create_element(objects_paths, backgrounds_paths, classes_names):
     # get random background
     background_idx = np.random.randint(len(backgrounds_paths))
     background_image = flip.utils.inv_channels(
-        cv2.imread(backgrounds_paths[background_idx], cv2.IMREAD_UNCHANGED,)
+        cv2.imread(backgrounds_paths[background_idx], cv2.IMREAD_UNCHANGED)
     )
 
     # create new element
@@ -132,14 +132,21 @@ def create_element(objects_paths, backgrounds_paths, classes_names):
             mode='symmetric_w',
             relation='parent',
             w_percentage_min=0.2,
-            w_percentage_max=0.5
+            w_percentage_max=0.4
         )
     ]
     
     
     transform_backgrounds = [
-        flip.transformers.data_augmentation.Flip('x'),
-        flip.transformers.data_augmentation.Color('xyz')
+        # flip.transformers.data_augmentation.Flip('x'),
+        # flip.transformers.data_augmentation.Color('xyz'),
+        flip.transformers.data_augmentation.RandomResize(
+            mode='symmetric_w',
+            w_max=3000,
+            h_max=3000,
+            w_min=1000,
+            h_min=1000
+        )
     ]
     
     
@@ -150,13 +157,13 @@ def create_element(objects_paths, backgrounds_paths, classes_names):
             flip.transformers.ApplyToObjects(transform_objects),
             flip.transformers.ApplyToBackground(transform_backgrounds),
             flip.transformers.domain_randomization.ObjectsRandomPosition(
-                x_min=0, y_min=0, x_max=1, y_max=1, mode='percentage'
+                x_min=0, y_min=0, x_max=0.5, y_max=0.5, mode='percentage'
             ),
             flip.transformers.domain_randomization.Draw(),
-            flip.transformers.labeler.CreateBoundingBoxes(),
-            flip.transformers.labeler.CreateMasks(classes_names), 
+            # flip.transformers.labeler.CreateBoundingBoxes(),
+            # flip.transformers.labeler.CreateMasks(classes_names),
             flip.transformers.io.SaveImage(OUT_DIR, name),
-            flip.transformers.io.SaveMask(OUT_DIR, name)
+            # flip.transformers.io.SaveMask(OUT_DIR, name)
        ]
     )
 
@@ -177,38 +184,38 @@ def create_child(path):
     return obj
 
 
-def create_google_csv(elements):
-    csv_data = ""
-
-    count = 0
-    train = len(elements) * 0.8
-    validate = len(elements) * 0.2
-
-    for element in elements:
-        count += 1
-
-        bh = element.image.shape[0]
-        bw = element.image.shape[1]
-
-        for tag in element.tags:
-            x1 = tag["pos"]["x"] / bw
-            y1 = tag["pos"]["y"] / bh
-            x2 = (tag["pos"]["x"] + tag["pos"]["w"]) / bw
-            y2 = (tag["pos"]["y"] + tag["pos"]["h"]) / bh
-
-            if x1 > 1:
-                x1 = 1
-            if y1 > 1:
-                y1 = 1
-            if x2 > 1:
-                x2 = 1
-            if y2 > 1:
-                y2 = 1
-
-            csv_data += f"{'TRAIN' if count <= train else ('VALIDATE' if count <= train + validate else 'TEST')},PATH#{element.name}.jpg,{tag['name']},{round(x1, 2)},{round(y1, 2)},,,{round(x2, 2)},{round(y2, 2)},,\n"
-
-    with open("examples/result/google_data.csv", mode="w") as f:
-        f.write(csv_data)
+# def create_google_csv(elements):
+#     csv_data = ""
+#
+#     count = 0
+#     train = len(elements) * 0.8
+#     validate = len(elements) * 0.2
+#
+#     for element in elements:
+#         count += 1
+#
+#         bh = element.image.shape[0]
+#         bw = element.image.shape[1]
+#
+#         for tag in element.tags:
+#             x1 = tag["pos"]["x"] / bw
+#             y1 = tag["pos"]["y"] / bh
+#             x2 = (tag["pos"]["x"] + tag["pos"]["w"]) / bw
+#             y2 = (tag["pos"]["y"] + tag["pos"]["h"]) / bh
+#
+#             if x1 > 1:
+#                 x1 = 1
+#             if y1 > 1:
+#                 y1 = 1
+#             if x2 > 1:
+#                 x2 = 1
+#             if y2 > 1:
+#                 y2 = 1
+#
+#             csv_data += f"{'TRAIN' if count <= train else ('VALIDATE' if count <= train + validate else 'TEST')},PATH#{element.name}.jpg,{tag['name']},{round(x1, 2)},{round(y1, 2)},,,{round(x2, 2)},{round(y2, 2)},,\n"
+#
+#     with open("examples/result/google_data.csv", mode="w") as f:
+#         f.write(csv_data)
 
 
 # ==============================================================================
