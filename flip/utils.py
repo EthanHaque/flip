@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import largestinteriorrectangle as lir
+import math
 
 
 def inv_channels(image):
@@ -109,29 +109,52 @@ def crop_from_contour(image):
     return cropped_img
 
 
-def compute_rotated_bounding_box(width, height, angle):
-    theta_rad = np.radians(angle)
-    corners = np.array([[0, 0], [width, 0], [0, height], [width, height]], dtype=np.float64)
-    cx, cy = width / 2, height / 2
-    corners -= np.array([cx, cy])
-    
-    rotation_matrix = np.array([[np.cos(theta_rad), -np.sin(theta_rad)],
-                                [np.sin(theta_rad), np.cos(theta_rad)]])
-    rotated_corners = np.dot(corners, rotation_matrix.T) + np.array([cx, cy])
-    rotated_corners -= rotated_corners.min(axis=0)
-    rotated_corners = np.array([rotated_corners[[1, 0, 2, 3]]], dtype=np.int32)
+def largest_inscribed_rectangle(width, height, angle):
+    if width <= 0 or height <= 0:
+        return 0, 0
 
-    return rotated_corners
+    width_is_longer = width >= height
+    longer_side, shorter_side = (width, height) if width_is_longer else (height, width)
+
+    abs_sin_angle = abs(math.sin(angle))
+    abs_cos_angle = abs(math.cos(angle))
+
+    # Determine if the rectangle is half or fully constrained, and calculate dimensions
+    if shorter_side <= 2 * abs_sin_angle * abs_cos_angle * longer_side or \
+            abs(abs_sin_angle - abs_cos_angle) < 1e-10:
+        # Half constrained case
+        x = 0.5 * shorter_side
+        inscribed_width, inscribed_height = (x / abs_sin_angle, x / abs_cos_angle) if width_is_longer \
+            else (x / abs_cos_angle, x / abs_sin_angle)
+    else:
+        # Fully constrained case
+        cos_2angle = abs_cos_angle**2 - abs_sin_angle**2
+        inscribed_width = (width * abs_cos_angle - height * abs_sin_angle) / cos_2angle
+        inscribed_height = (height * abs_cos_angle - width * abs_sin_angle) / cos_2angle
+
+    return inscribed_width, inscribed_height
 
 
 def crop_from_angle(rotated_image, old_width, old_height, angle):
-    box = compute_rotated_bounding_box(old_width, old_height, angle)
-    rectangle = lir.lir(box)
-    x, y, w, h = rectangle
+    wr, hr = largest_inscribed_rectangle(old_width, old_height, math.radians(angle))
 
-    x1 = x + 1
-    y1 = y + 1
-    x2 = x + w - 1
-    y2 = y + h - 1
+    # Now, calculate the position where this rectangle should be cropped from the center of the rotated image
+    center_x = rotated_image.shape[1] // 2
+    center_y = rotated_image.shape[0] // 2
+    
+    x1 = max(0, center_x - int(wr // 2))
+    y1 = max(0, center_y - int(hr // 2))
+    x2 = min(rotated_image.shape[1], center_x + int(wr // 2))
+    y2 = min(rotated_image.shape[0], center_y + int(hr // 2))
 
     return rotated_image[y1:y2, x1:x2]
+
+
+if __name__ == "__main__":
+    width, height = 700, 1000
+    image = np.ones((height, width, 3), dtype=np.uint8) * 255
+    angle = 97
+    rotated_image = rotate_bound(image, angle)
+
+    cropped_image = crop_from_angle(rotated_image, width, height, angle)
+    cv2.imwrite("cropped_image.png", cropped_image)
