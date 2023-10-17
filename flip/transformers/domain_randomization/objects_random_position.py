@@ -139,10 +139,11 @@ class ObjectsRandomPosition(Transformer):
             obj_w: int = int(obj.image.shape[1])
 
             # max and min limits for the object with respect to the background
+            # max and min limits for the object with respect to the background, ensuring the entire object is within the background
             low_x = int(max(0, x_min))
-            high_x = int(min(x_max, el_w))
+            high_x = int(min(x_max - obj_w, el_w - obj_w))
             low_y = int(max(0, y_min))
-            high_y = int(min(y_max, el_h))
+            high_y = int(min(y_max - obj_h, el_h - obj_h))
 
             # overlapping percentage
             factor = 0
