@@ -106,3 +106,18 @@ def crop_from_contour(image):
     cropped_img = image[rect[1]:(rect[1] + rect[3]), rect[0]:(rect[0] + rect[2])]
 
     return cropped_img
+
+
+def crop_from_angle(image, angle):
+    height, width = image.shape[:2]
+    rotation_matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
+
+    corners = np.array([[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]])
+    corners = np.hstack((corners, np.ones((4, 1))))  # Add a column of ones for the homogeneous coordinates
+    new_corners = rotation_matrix.dot(corners.T).T
+
+    x, y, w, h = cv2.boundingRect(new_corners.astype(int))
+    cropped_img = image[y:y + h, x:x + w]
+
+    return cropped_img
+    
