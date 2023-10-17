@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import largestinteriorrectangle as lir
 
 
 def inv_channels(image):
@@ -108,16 +109,37 @@ def crop_from_contour(image):
     return cropped_img
 
 
-def crop_from_angle(image, angle):
-    height, width = image.shape[:2]
-    rotation_matrix = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
-
-    corners = np.array([[0, 0], [width - 1, 0], [width - 1, height - 1], [0, height - 1]])
-    corners = np.hstack((corners, np.ones((4, 1))))  # Add a column of ones for the homogeneous coordinates
-    new_corners = rotation_matrix.dot(corners.T).T
-
-    x, y, w, h = cv2.boundingRect(new_corners.astype(int))
-    cropped_img = image[y:y + h, x:x + w]
-
-    return cropped_img
+def compute_rotated_bounding_box(width, height, angle):
+    theta_rad = np.radians(angle)
+    corners = np.array([[0, 0], [width, 0], [0, height], [width, height]], dtype=np.float64)
+    cx, cy = width / 2, height / 2
+    corners -= np.array([cx, cy])
     
+    rotation_matrix = np.array([[np.cos(theta_rad), -np.sin(theta_rad)],
+                                [np.sin(theta_rad), np.cos(theta_rad)]])
+    rotated_corners = np.dot(corners, rotation_matrix.T) + np.array([cx, cy])
+    rotated_corners -= rotated_corners.min(axis=0)
+    rotated_corners = np.array([rotated_corners[[1, 0, 2, 3]]], dtype=np.int32)
+
+    return rotated_corners
+
+
+def crop_from_angle(rotated_image, old_width, old_height, angle):
+    box = compute_rotated_bounding_box(old_width, old_height, angle)
+    rectangle = lir.lir(box)
+    x, y, w, h = rectangle
+
+    x1 = x + 1
+    y1 = y + 1
+    x2 = x + w - 1
+    y2 = y + h - 1
+
+    return rotated_image[y1:y2, x1:x2]
+
+
+if __name__ == "__main__":
+    img = np.zeros((2000, 200, 3), dtype=np.uint8) + 255
+    angle = 45
+    rotated_img = rotate_bound(img, angle)  
+    cropped_img = crop_from_angle(rotated_img, img.shape[1], img.shape[0], -angle)
+    cv2.imwrite("rotated_img.png", cropped_img)
