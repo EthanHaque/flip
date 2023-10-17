@@ -14,9 +14,10 @@ class Rotate(Transformer):
 
     _SUPPORTED_MODES = {'random', '90', 'upside_down'}
 
-    def __init__(self, mode='random', min=0, max=360, force=True):
+    def __init__(self, mode='random', min=0, max=360, force=True, crop=True):
         self.mode = mode
         self.force = force
+        self.crop = crop
 
         if self.mode not in self._SUPPORTED_MODES:
             raise ValueError("Mode '{0:s}' not supported. ".format(self.mode))
@@ -40,12 +41,17 @@ class Rotate(Transformer):
         
         element.tags.append({"rotation": angle})
 
+        old_width = element.image.shape[1]
+        old_height = element.image.shape[0]
+
         if self.force == False:
             if np.random.randint(low=0, high=2) == 0:
                 element.image = rotate_bound(element.image, angle)
-                element.image = crop_from_angle(element.image, angle)
+                if self.crop:
+                    element.image = crop_from_angle(element.image, old_width, old_height, -angle)
         else:
             element.image = rotate_bound(element.image, angle)
-            element.image = crop_from_angle(element.image, angle)
+            if self.crop:
+                element.image = crop_from_angle(element.image, old_width, old_height, -angle)
 
         return element
