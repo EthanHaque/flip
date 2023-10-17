@@ -135,11 +135,3 @@ def crop_from_angle(rotated_image, old_width, old_height, angle):
     y2 = y + h - 1
 
     return rotated_image[y1:y2, x1:x2]
-
-
-if __name__ == "__main__":
-    img = np.zeros((2000, 200, 3), dtype=np.uint8) + 255
-    angle = 45
-    rotated_img = rotate_bound(img, angle)  
-    cropped_img = crop_from_angle(rotated_img, img.shape[1], img.shape[0], -angle)
-    cv2.imwrite("rotated_img.png", cropped_img)
