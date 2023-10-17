@@ -148,13 +148,3 @@ def crop_from_angle(rotated_image, old_width, old_height, angle):
     y2 = min(rotated_image.shape[0], center_y + int(hr // 2))
 
     return rotated_image[y1:y2, x1:x2]
-
-
-if __name__ == "__main__":
-    width, height = 700, 1000
-    image = np.ones((height, width, 3), dtype=np.uint8) * 255
-    angle = 97
-    rotated_image = rotate_bound(image, angle)
-
-    cropped_image = crop_from_angle(rotated_image, width, height, angle)
-    cv2.imwrite("cropped_image.png", cropped_image)
