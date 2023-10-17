@@ -2,7 +2,7 @@ import numpy as np
 
 from flip.transformers.element import Element
 from flip.transformers.transformer import Transformer
-from flip.utils import rotate_bound, crop_from_contour
+from flip.utils import rotate_bound, crop_from_angle
 
 class Rotate(Transformer):
     """ Flip image of Element
@@ -17,7 +17,6 @@ class Rotate(Transformer):
     def __init__(self, mode='random', min=0, max=360, force=True):
         self.mode = mode
         self.force = force
-        self.rotation_angle = None  # Attribute to store the rotation angle
 
         if self.mode not in self._SUPPORTED_MODES:
             raise ValueError("Mode '{0:s}' not supported. ".format(self.mode))
@@ -36,18 +35,17 @@ class Rotate(Transformer):
         else:
             angle = np.random.uniform(low=self.angles[0], high=self.angles[1],)
 
-        self.rotation_angle = angle  # Save the rotation angle
+        if element.tags is None:
+            element.tags = []
+        
+        element.tags.append({"rotation": angle})
 
         if self.force == False:
             if np.random.randint(low=0, high=2) == 0:
                 element.image = rotate_bound(element.image, angle)
-                element.image = crop_from_contour(element.image)
+                element.image = crop_from_angle(element.image, angle)
         else:
             element.image = rotate_bound(element.image, angle)
-            element.image = crop_from_contour(element.image)
+            element.image = crop_from_angle(element.image, angle)
 
         return element
-
-    def get_rotation_angle(self):
-        """ Return the last used rotation angle """
-        return self.rotation_angle
