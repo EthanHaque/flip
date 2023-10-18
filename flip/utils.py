@@ -148,3 +148,10 @@ def crop_from_angle(rotated_image, old_width, old_height, angle):
     y2 = min(rotated_image.shape[0], center_y + int(hr // 2))
 
     return rotated_image[y1:y2, x1:x2]
+
+
+def get_size_of_rotated_bounding_box(width, height, angle):
+    new_width = abs(width * math.cos(angle)) + abs(height * math.sin(angle))
+    new_height = abs(width * math.sin(angle)) + abs(height * math.cos(angle))
+
+    return new_width, new_height
