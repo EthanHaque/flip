@@ -133,15 +133,14 @@ class ObjectsRandomPosition(Transformer):
         masks = []
         for f,obj in enumerate(element.objects):
             
-            # object dimension
-
+            # object dimensions
             obj_h: int = int(obj.image.shape[0])
             obj_w: int = int(obj.image.shape[1])
 
             low_x = int(max(0, x_min))
-            high_x = int(min(x_max, el_w - obj_w))
+            high_x = int(max(0, min(x_max, el_w - obj_w)))
             low_y = int(max(0, y_min))
-            high_y = int(min(y_max, el_h - obj_h))
+            high_y = int(max(0, min(y_max, el_h - obj_h)))
 
             # overlapping percentage
             factor = 0
@@ -188,5 +187,10 @@ class ObjectsRandomPosition(Transformer):
             a+=1
         if len(delete)!=0:
             warnings.warn('There is no space available to place all the objects')
-        
+
+        # print true if the object is out of the image. This is not allowed
+        for obj in element.objects:
+            if obj.x + obj.image.shape[1] > element.image.shape[1] or obj.y + obj.image.shape[0] > element.image.shape[0]:
+                warnings.warn('Object out of the image at end')
+
         return element
