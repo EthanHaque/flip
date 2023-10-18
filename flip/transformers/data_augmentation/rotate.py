@@ -40,22 +40,20 @@ class Rotate(Transformer):
         else:
             angle = np.random.uniform(low=self.angles[0], high=self.angles[1],)
 
-        if element.tags is None:
-            element.tags = []
-        
-
         old_width = element.image.shape[1]
         old_height = element.image.shape[0]
 
         if self.force == False:
             if np.random.randint(low=0, high=2) == 0:
                 element.image = rotate_bound(element.image, angle)
-                element.tags.append({"rotation": angle})
+                element.angle = angle
                 if self.crop:
                     element.image = crop_from_angle(element.image, old_width, old_height, -angle)
+            else:
+                element.angle = 0
         else:
             element.image = rotate_bound(element.image, angle)
-            element.tags.append({"rotation": angle})
+            element.angle = angle
             if self.crop:
                 element.image = crop_from_angle(element.image, old_width, old_height, -angle)
         return element
