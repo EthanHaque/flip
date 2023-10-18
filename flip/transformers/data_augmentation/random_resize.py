@@ -10,7 +10,7 @@ class RandomResize(Transformer):
 
         Parameters
         ----------
-        mode: {'asymmetric', 'symmetric_w', 'symmetric_h'}, default='asymmetric'
+        mode: {'asymmetric', 'symmetric_w', 'symmetric_h', 'larger'}, default='asymmetric'
         relation: {'none', 'parent'}
         w_min: when mode='parent' w_min represent a percentage value related to the parent object
         w_max:
@@ -23,7 +23,7 @@ class RandomResize(Transformer):
                 symmetric_w use w_min, w_max / pw_min, pw_max
                 symmetric_h use h_min, h_max / ph_min, ph_max
     """
-    _SUPPORTED_MODES = {'asymmetric', 'symmetric_w', 'symmetric_h'}
+    _SUPPORTED_MODES = {'asymmetric', 'symmetric_w', 'symmetric_h', 'larger'}
 
     def __init__(
         self,
@@ -87,6 +87,21 @@ class RandomResize(Transformer):
                 else np.random.randint(low=w_min, high=w_max,)
             )
             h = element.image.shape[0] * (w / element.image.shape[1])
+        elif self.mode == 'larger':
+            if element.image.shape[0] > element.image.shape[1]:
+                h = (
+                    h_min
+                    if h_min == h_max is not None
+                    else np.random.randint(low=h_min, high=h_max,)
+                )
+                w = element.image.shape[1] * (h / element.image.shape[0])
+            else:
+                w = (
+                    w_min
+                    if w_min == w_max is not None
+                    else np.random.randint(low=w_min, high=w_max,)
+                )
+                h = element.image.shape[0] * (w / element.image.shape[1])
         else:
             w = (
                 w_min
