@@ -88,20 +88,20 @@ class RandomResize(Transformer):
             )
             h = element.image.shape[0] * (w / element.image.shape[1])
         elif self.mode == 'larger':
-            if element.image.shape[0] > element.image.shape[1]:
-                h = (
-                    h_min
-                    if h_min == h_max is not None
-                    else np.random.randint(low=h_min, high=h_max,)
-                )
-                w = element.image.shape[1] * (h / element.image.shape[0])
+            aspect_ratio = element.image.shape[1] / element.image.shape[0]
+
+            if aspect_ratio >= 1: 
+                w = min(w_max, element.image.shape[1])
+                h = w / aspect_ratio
+                if h > h_max: 
+                    h = h_max
+                    w = int(h * aspect_ratio)
             else:
-                w = (
-                    w_min
-                    if w_min == w_max is not None
-                    else np.random.randint(low=w_min, high=w_max,)
-                )
-                h = element.image.shape[0] * (w / element.image.shape[1])
+                h = min(h_max, element.image.shape[0])
+                w = h * aspect_ratio
+                if w > w_max: 
+                    w = w_max
+                    h = int(w / aspect_ratio)
         else:
             w = (
                 w_min
