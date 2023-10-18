@@ -53,5 +53,4 @@ class Rotate(Transformer):
             element.image = rotate_bound(element.image, angle)
             if self.crop:
                 element.image = crop_from_angle(element.image, old_width, old_height, -angle)
-
         return element
