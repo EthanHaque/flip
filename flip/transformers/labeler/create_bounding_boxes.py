@@ -8,7 +8,10 @@ class CreateBoundingBoxes(Transformer):
     def map(self, element: Element) -> Element:
         assert element, "element cannot be None"
 
-        element.tags = self.create(element)
+        if element.tags is None:
+            element.tags = self.create(element)
+        else:
+            element.tags = element.tags + self.create(element)
 
         return element
 
